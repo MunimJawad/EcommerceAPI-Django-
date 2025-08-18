@@ -1,0 +1,229 @@
+from rest_framework.response import Response
+from rest_framework.views import APIView
+from rest_framework import status,permissions
+from rest_framework.permissions import IsAuthenticated,IsAdminUser
+from .permissions import IsAdmin,IsCustomer,IsStaff,IsAdminOrSelf,IsAdminOrReadOnly
+from .serializers import RegisterSerializer,LoginSerializer,UserSerializer,CategorySerializer,ProductSerializer,OrderItemSerializer,OrderSerializer,ShippingAddressSerializer
+from .models import CustomUser,Category,Product,Order,OrderItem,ShippingAddress
+from django.shortcuts import get_object_or_404
+
+
+class RegisterView(APIView):
+    def post(self,request):
+        serializer=RegisterSerializer(data=request.data)
+
+        if serializer.is_valid():
+            serializer.save()
+            return Response({'message': 'User created successfully'}, status=status.HTTP_201_CREATED)
+        
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+class LoginView(APIView):
+    def post(self, request):
+        serializer = LoginSerializer(data=request.data)
+        
+        if serializer.is_valid():
+            return Response(serializer.validated_data, status=status.HTTP_200_OK)
+        
+        return Response(serializer.errors, status=status.HTTP_401_UNAUTHORIZED)
+    
+class UserListView(APIView):
+    permission_classes = [IsAdmin]
+
+    def get(self, request):  
+        users = CustomUser.objects.all()
+        total_users = users.count()
+        serializer = UserSerializer(users, many=True)
+        return Response({
+            'users': serializer.data,
+            'total_users': total_users
+        })
+
+class UserDetailUpdateDeleteView(APIView):
+    permission_classes=[IsAdminOrSelf]
+
+    def get(self,request,pk):
+        user=get_object_or_404(CustomUser,pk=pk)
+        self.check_object_permissions(request, user)
+        return Response(UserSerializer(user).data)
+    
+    def put(self, request, pk):
+        user = get_object_or_404(CustomUser, pk=pk)
+        self.check_object_permissions(request, user)
+        if request.user != user and request.user.role != 'admin':
+            return Response({"error": "Permission denied"}, status=403)
+        serializer = UserSerializer(user, data=request.data, partial=True, context={'request': request})
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=400)
+    
+    def delete(self, request, pk):
+        user = get_object_or_404(CustomUser, pk=pk)
+        self.check_object_permissions(request, user)
+        if request.user.role != 'admin':
+            return Response({"error": "Only admins can delete users"}, status=403)
+        user.delete()
+        return Response({"message":"Successfully deleted {user.username}"},status=204)
+
+
+#Categroy Crud
+
+class CategoryCreateOrListView(APIView):
+    permission_classes=[IsAdminOrReadOnly]
+
+    def get(self, request):
+      categories = Category.objects.all()
+      total = categories.count()
+      serializer = CategorySerializer(categories, many=True)
+      return Response({
+          "message": "Here is the List of Categories",
+          'categories': serializer.data,
+          'total': total            
+      })
+    
+
+    def post(self, request):
+        serializer = CategorySerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class CategoryUpdateOrDeleteView(APIView):
+    permission_classes=[IsAuthenticated,IsAdminOrReadOnly]
+    def get_object(self, pk):
+        category = get_object_or_404(Category, pk=pk)
+        # Check object-level permissions
+        self.check_object_permissions(self.request, category)
+        return category
+
+    def get(self, request, pk):
+        category = self.get_object(pk)
+        serializer = CategorySerializer(category)
+        return Response(serializer.data)
+    
+    def delete(self, request, pk):
+        category = self.get_object(pk)
+        if category:
+             category.delete()
+             return Response(
+                 {"message": f"Category {category.name} deleted successfully"},
+                 status=status.HTTP_204_NO_CONTENT
+             )
+        return Response({'error':"You do not have permission to perform this operation"},status=status.HTTP_403_FORBIDDEN)
+
+#Product Crud
+
+class ProductListCreateAPIView(APIView):
+    country="Bangladesh"
+    def get(self,request):
+        products=Product.objects.all()
+        if products:
+           serializer=ProductSerializer(products,many=True)
+           return Response({
+               "message":f"Total {products.count()} products availbale now:",
+               "product_list":serializer.data
+           },status=status.HTTP_200_OK)
+        else:
+            return Response({"message":"There is no prodcts please Add some"})
+        
+    def post(self, request):
+      serializer = ProductSerializer(data=request.data)
+      if serializer.is_valid():
+          serializer.save()
+          return Response({
+              "message": "New Product added",
+              "data": serializer.data
+          }, status=status.HTTP_201_CREATED)
+      return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+
+class ProductDetailOrDeleteView(APIView):
+    def get_object(self, pk):
+        return get_object_or_404(Product, pk=pk)
+
+    def get(self, request, pk):
+        product = self.get_object(pk)
+        serializer = ProductSerializer(product)
+        return Response(serializer.data)
+    
+    def put(self,request,pk):
+        product=self.get_object(pk)
+        serializer=ProductSerializer(product,data=request.data,partial=True,context={'request': request})
+        
+        if request.user.role=="admin":
+           if serializer.is_valid():
+               serializer.save()
+               return Response({
+                   'product':serializer.data,
+                   'message':"Product Updated Successfully"
+                   })
+        return Response({
+            'error':"You have no access to edit product"
+        },status=status.HTTP_400_BAD_REQUEST)
+    
+    def delete(self,request,pk):
+        product=self.get_object(pk)
+
+        if request.user.role=="admin":
+            product.delete()
+            return Response({
+                'message':'Product Deleted Successfully'
+            },status=status.HTTP_204_NO_CONTENT)
+        return Response({
+            'error':'You have no access to delete the product'
+        },status=status.HTTP_403_FORBIDDEN)
+    
+
+    
+#Cart APIView
+
+class CartAPI(APIView):
+
+    permission_classes=[IsAuthenticated]
+
+    def get_cart(self,user):
+        cart,created=Order.objects.get_or_create(customer=user,completed=False)
+        return cart
+    
+    def get(self,request):
+        cart=self.get_cart(request.user)
+        serializer=OrderSerializer(cart)
+        return Response(serializer.data,status=status.HTTP_200_OK)
+    
+    def post(self,request):
+        """Add product to cart"""
+
+        product_id=request.data.get("product_id")
+        quantity=request.data.get("quantity",1)
+
+        if not product_id:
+            return Response({"error": "Product ID is required"}, status=status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            product=Product.objects.get(id=product_id)
+        
+        except Product.DoesNotExist:
+            return Response({"error": "Product not found"}, status=status.HTTP_404_NOT_FOUND)
+        
+        cart=self.get_cart(request.user)
+
+        item,created=OrderItem.objects.get_or_create(order=cart,product=product)
+
+        if not created:
+            item.quantity+=int(quantity)
+        else:
+            item.quantity=quantity
+        item.save()
+
+        serializer=OrderSerializer(cart)
+
+        return Response(serializer.data,status=status.HTTP_201_CREATED)
+
+    
+
+
+
+ 
