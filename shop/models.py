@@ -52,6 +52,18 @@ class Order(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     completed = models.BooleanField(default=False)  # Used for cart vs order
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')  # ✅ new field
+    
+    @property
+    def get_cart_total(self):
+        """Sum of all items in cart"""
+        items = self.items.all()
+        return sum([item.get_total for item in items])
+    
+    @property 
+    def get_total_item(self):
+        """Sum of total items"""
+        items=self.items.all()
+        return sum([item.quantity for item in items])
 
     def __str__(self):
         return f"Order #{self.id} by {self.customer.username} - {self.status}"
@@ -62,6 +74,11 @@ class OrderItem(models.Model):
     order = models.ForeignKey(Order, related_name='items', on_delete=models.CASCADE)
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
     quantity = models.PositiveIntegerField(default=1)
+    
+    @property
+    def get_total(self):
+        """Total price of this item"""
+        return self.product.price*self.quantity
 
     def __str__(self):
         return f"{self.quantity} x {self.product.title}"

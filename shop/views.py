@@ -221,6 +221,29 @@ class CartAPI(APIView):
         serializer=OrderSerializer(cart)
 
         return Response(serializer.data,status=status.HTTP_201_CREATED)
+    
+    def delete(self,request):
+        """Remove Product from cart"""
+
+        item_id=request.data.get("item_id")
+
+        if not item_id:
+            return Response({'error':'Item ID is required'},status=status.HTTP_400_BAD_REQUEST)
+        try:
+          item=OrderItem.objects.get(id=item_id,order__customer=request.user,order__completed=False)
+          item.delete()
+        except OrderItem.DoesNotExist:
+            return Response({'error':'Order Item Does not Found '},status=status.HTTP_400_BAD_REQUEST)
+        
+        cart=self.get_cart(request.user)
+        serializer=OrderSerializer(cart)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+        
+
+
+
+
+
 
     
 
