@@ -119,10 +119,10 @@ class OrderItemSerializer(serializers.ModelSerializer):
         fields = ['id', 'product', 'product_title', 'product_price', 'quantity']
 
 
-class ShippingAddressSerializer(serializers.ModelField):
+class ShippingAddressSerializer(serializers.ModelSerializer):
     class Meta:
        model=ShippingAddress
-       fields=['id','user','order','address','city','zip_code']
+       fields=['id','address','city','zip_code','date_added']
 
 
 class OrderSerializer(serializers.ModelSerializer):
@@ -134,3 +134,5 @@ class OrderSerializer(serializers.ModelSerializer):
         model=Order
         fields=['id','customer','customer_name','created_at','status','completed','items','total_price','total_items']
         read_only_fields=['customer','created_at','items']
+
+

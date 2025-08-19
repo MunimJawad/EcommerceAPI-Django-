@@ -222,6 +222,30 @@ class CartAPI(APIView):
 
         return Response(serializer.data,status=status.HTTP_201_CREATED)
     
+    def put(self,request):
+        """Update quantity of a product in cart"""
+
+        item_id=request.data.get("item_id")
+        quantity=request.data.get("quantity")
+
+        if not item_id or quantity is None:
+            return Response({'error':'ID and Quantity Required'},status=status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            item=OrderItem.objects.get(id=item_id,order__customer=request.user,order__completed=False)
+        
+        except Product.DoesNotExist:
+            return Response({'error':'Product not found in cart'},status=status.HTTP_400_BAD_REQUEST)
+        
+        item.quantity=int(quantity)
+        item.save()
+
+        cart=self.get_cart(request.user)
+        serializer=OrderSerializer(cart)
+        return Response(serializer.data,status=status.HTTP_200_OK)
+
+
+    
     def delete(self,request):
         """Remove Product from cart"""
 
@@ -240,6 +264,37 @@ class CartAPI(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
         
 
+
+
+class CheckoutAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        try:
+            # Get the active order for this user
+            order = Order.objects.get(customer=request.user, completed=False)
+        except Order.DoesNotExist:
+            return Response({'error': 'Order Does not Exist'}, status=status.HTTP_400_BAD_REQUEST)
+
+        serializer = ShippingAddressSerializer(data=request.data)
+
+        if serializer.is_valid():
+            # Save shipping address and link it with user + order
+            shipping = serializer.save(user=request.user, order=order)
+
+            # Mark order as completed
+            order.completed = True
+            order.save()
+
+            return Response({
+                "message": "Checkout successfully",
+                "order_id": order.id,
+                "order_username": request.user.username,
+                "total_price": order.get_cart_total,
+                "shipping_address": ShippingAddressSerializer(shipping).data
+            }, status=status.HTTP_201_CREATED)
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 
