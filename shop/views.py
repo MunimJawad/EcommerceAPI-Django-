@@ -31,6 +31,8 @@ class UserListView(APIView):
     permission_classes = [IsAdmin]
 
     def get(self, request):  
+        if request.user.role !="admin":
+            return Response({"error":"You have no permission to view this page"})
         users = CustomUser.objects.all()
         total_users = users.count()
         serializer = UserSerializer(users, many=True)
@@ -92,7 +94,7 @@ class CategoryCreateOrListView(APIView):
 
 
 class CategoryUpdateOrDeleteView(APIView):
-    permission_classes=[IsAuthenticated,IsAdminOrReadOnly]
+    permission_classes=[IsAdminOrReadOnly]
     def get_object(self, pk):
         category = get_object_or_404(Category, pk=pk)
         # Check object-level permissions
@@ -117,6 +119,7 @@ class CategoryUpdateOrDeleteView(APIView):
 #Product Crud
 
 class ProductListCreateAPIView(APIView):
+   
     country="Bangladesh"
     def get(self,request):
         products=Product.objects.all()
@@ -130,14 +133,15 @@ class ProductListCreateAPIView(APIView):
             return Response({"message":"There is no prodcts please Add some"})
         
     def post(self, request):
-      serializer = ProductSerializer(data=request.data)
-      if serializer.is_valid():
-          serializer.save()
-          return Response({
-              "message": "New Product added",
-              "data": serializer.data
-          }, status=status.HTTP_201_CREATED)
-      return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+      if request.user.role=='admin':
+          serializer = ProductSerializer(data=request.data)
+          if serializer.is_valid():
+              serializer.save()
+              return Response({
+                  "message": "New Product added",
+                  "data": serializer.data
+              }, status=status.HTTP_201_CREATED)
+          return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
 
 class ProductDetailOrDeleteView(APIView):
