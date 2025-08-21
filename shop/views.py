@@ -302,6 +302,41 @@ class CheckoutAPIView(APIView):
 
 
 
+class OrderListAPIView(APIView):
+    permission_classes=[IsAuthenticated]
+
+    def get(self,request):
+        orders=Order.objects.filter(customer=request.user,completed=True).order_by('-created_at')
+        serializer=OrderSerializer(orders,many=True)
+        return Response(serializer.data)
+    
+
+class OrderDetailUpdateDeleteView(APIView):
+    permission_classes=[IsAuthenticated]
+
+    def get_order(self, pk):
+        # Ensure that the order is retrieved using the pk
+        return get_object_or_404(Order, pk=pk)
+
+    def get(self, request, pk):
+        order = self.get_order(pk)
+        serializer = OrderSerializer(order)  # Make sure to pass the context as well
+        return Response(serializer.data)
+    
+    def delete(self,request,pk):
+
+        if request.user.role=='admin':
+           order=self.get_order(pk)
+           order.delete()
+           return Response({
+               'message':'Order Deleted Successfully'
+           },status=status.HTTP_200_OK)
+        return Response({
+            'error':'You have no permission'
+        },status=status.HTTP_403_FORBIDDEN)
+
+
+
 
 
     
