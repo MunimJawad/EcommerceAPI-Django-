@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import RegisterView,LoginView,UserListView,UserDetailUpdateDeleteView,CategoryCreateOrListView,CategoryUpdateOrDeleteView,ProductListCreateAPIView,ProductDetailOrDeleteView,CartAPI,CheckoutAPIView,OrderListAPIView,OrderDetailUpdateDeleteView
+from .views import RegisterView,LoginView,UserListView,UserDetailUpdateDeleteView,CategoryCreateOrListView,CategoryUpdateOrDeleteView,ProductListCreateAPIView,ProductDetailOrDeleteView,CartAPI,CheckoutAPIView,OrderListAPIView,OrderDetailUpdateDeleteView,AdminOrderListAPIView
 
 
 urlpatterns = [
@@ -22,5 +22,8 @@ urlpatterns = [
 
     #Order for user
     path('orders/',OrderListAPIView.as_view(),name='orders'),
-    path('orders/<int:pk>/',OrderDetailUpdateDeleteView.as_view())
+    path('orders/<int:pk>/',OrderDetailUpdateDeleteView.as_view()),
+
+    #admin users
+    path('admin-orders/',AdminOrderListAPIView.as_view())
 ]

@@ -3,7 +3,7 @@ from rest_framework.views import APIView
 from rest_framework import status,permissions
 from rest_framework.permissions import IsAuthenticated,IsAdminUser
 from .permissions import IsAdmin,IsCustomer,IsStaff,IsAdminOrSelf,IsAdminOrReadOnly
-from .serializers import RegisterSerializer,LoginSerializer,UserSerializer,CategorySerializer,ProductSerializer,OrderItemSerializer,OrderSerializer,ShippingAddressSerializer
+from .serializers import RegisterSerializer,LoginSerializer,UserSerializer,CategorySerializer,ProductSerializer,OrderItemSerializer,OrderSerializer,ShippingAddressSerializer,AdminOrderSerializer
 from .models import CustomUser,Category,Product,Order,OrderItem,ShippingAddress
 from django.shortcuts import get_object_or_404
 
@@ -334,6 +334,17 @@ class OrderDetailUpdateDeleteView(APIView):
         return Response({
             'error':'You have no permission'
         },status=status.HTTP_403_FORBIDDEN)
+
+
+#Admin Functionality
+
+class AdminOrderListAPIView(APIView):
+    permission_classes = [IsAdmin]
+
+    def get(self, request):
+        orders = Order.objects.filter(completed=True).order_by('-created_at')
+        serializer = AdminOrderSerializer(orders, many=True)
+        return Response(serializer.data)
 
 
 
