@@ -345,6 +345,34 @@ class AdminOrderListAPIView(APIView):
         orders = Order.objects.filter(completed=True).order_by('-created_at')
         serializer = AdminOrderSerializer(orders, many=True)
         return Response(serializer.data)
+    
+
+class AdminOrderUpdateView(APIView):
+    permission_classes=[IsAdmin]
+
+    def patch(self,request,pk):
+        try:
+          order=Order.objects.get(completed=True,pk=pk)
+        except Order.DoesNotExist:
+            return Response({'error':'Order not found'},status=status.HTTP_404_NOT_FOUND)
+        
+        status_value=request.data.get('status')
+
+        if status_value not in dict(Order.STATUS_CHOICES):
+            return Response({'error':'Invalid status'},status=status.HTTP_400_BAD_REQUEST)
+
+        order.status=status_value
+        order.save()
+
+        serializer = OrderSerializer(order)
+
+        return Response({'message':'Order status updated Successfully',
+                         'order':serializer.data                         
+                         },status=status.HTTP_200_OK)
+    
+
+
+        
 
 
 
