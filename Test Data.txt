@@ -1,0 +1,122 @@
+1. Signup (Customer)
+
+POST /api/auth/register/
+
+{
+  "username": "munim",
+  "email": "munim@example.com",
+  "password": "test1234"
+}
+
+2. Login (Get Token)
+
+POST /api/auth/login/
+
+{
+  "username": "munim",
+  "password": "test1234"
+}
+
+
+👉 Response will give you access token → use it in Authorization: Bearer <token>
+
+3. Add Categories (Admin Only)
+
+POST /api/categories/
+
+{
+  "name": "Electronics"
+}
+
+{
+  "name": "Fashion"
+}
+
+4. Add Products (Admin Only)
+
+POST /api/products/
+
+{
+  "name": "iPhone 14",
+  "description": "Latest Apple iPhone",
+  "price": 1200,
+  "category": 1
+}
+
+{
+  "name": "T-Shirt",
+  "description": "Cotton T-Shirt",
+  "price": 25,
+  "category": 2
+}
+
+5. Add to Cart
+
+POST /api/cart/add/
+
+{
+  "product_id": 1,
+  "quantity": 2
+}
+
+{
+  "product_id": 2,
+  "quantity": 3
+}
+
+6. View Cart
+
+GET /api/cart/
+
+7. Checkout
+
+POST /api/checkout/
+
+{
+  "address": "Dhaka, Bangladesh",
+  "city": "Dhaka",
+  "postal_code": "1207",
+  "country": "Bangladesh"
+}
+
+
+👉 Response Example:
+
+{
+  "message": "Checkout successfully",
+  "order_id": 1,
+  "order_username": "munim",
+  "total_price": 2550,
+  "shipping_address": {
+    "id": 1,
+    "address": "Dhaka, Bangladesh",
+    "city": "Dhaka",
+    "postal_code": "1207",
+    "country": "Bangladesh"
+  }
+}
+
+8. Select Payment (Cash on Delivery)
+
+POST /api/orders/1/cod/
+
+{
+  "payment_method": "COD"
+}
+
+
+👉 Response Example:
+
+{
+  "message": "Cash on Delivery selected. Please pay upon delivery.",
+  "order_id": 1,
+  "total_price": 2550
+}
+
+9. Admin Updates Order Status
+
+PATCH /api/admin/orders/1/update/
+
+{
+  "status": "Shipped"
+}

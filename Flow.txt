@@ -1,0 +1,41 @@
+🔹 Current Flow (What you have now)
+
+User adds products → creates Order (completed = False).
+
+User checks out (fills shipping address).
+
+At checkout, you’re marking order.completed = True.
+
+That means your system already thinks the order is done.
+
+But in reality, payment hasn’t happened yet.
+
+🔹 Correct Flow (Industry Standard)
+
+We should separate Checkout and Payment:
+
+Cart Phase → user adds products, order is completed=False.
+
+Checkout Phase → user enters shipping details.
+
+At this point, the order is created, but still not paid.
+
+So order.completed should still be False.
+
+Instead, add a field like is_checkout_done=True.
+
+Payment Phase → user selects payment option (COD, Stripe, PayPal, etc.).
+
+If payment succeeds → set order.completed=True.
+
+If payment fails → order stays incomplete.
+
+🔹 Why This Is Better
+
+✅ Prevents marking unpaid orders as “completed.”
+
+✅ Matches real-world flow (Amazon, Daraz, etc.).
+
+✅ Allows multiple payment methods (COD, card, etc.).
+
+✅ Easier for Admin to see which orders are pending payment vs fully confirmed.

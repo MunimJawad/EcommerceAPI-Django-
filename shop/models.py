@@ -48,10 +48,21 @@ class Order(models.Model):
         ('cancelled', 'Cancelled'),
     ]
 
+    PAYMENT_METHODS=[
+        ('COD','Cash On Delivery'),
+        ('ONLINE','Online Payment')
+    ]
+
     customer = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
     created_at = models.DateTimeField(auto_now_add=True)
+    is_checked_out=models.BooleanField(default=False)
     completed = models.BooleanField(default=False)  # Used for cart vs order
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')  # ✅ new field
+
+    #payment info
+    payment_method=models.CharField(max_length=20,choices=PAYMENT_METHODS,default="COD")
+    payment_status=models.BooleanField(default=False)
+    transaction_id=models.CharField(max_length=100,null=True,blank=True)
     
     @property
     def get_cart_total(self):
