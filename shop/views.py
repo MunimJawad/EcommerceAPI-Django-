@@ -291,9 +291,8 @@ class CheckoutAPIView(APIView):
 
          
             order.is_checked_out = True
+
             order.payment_method=payment_method
-            if order.payment_method=='COD':
-              order.payment_status=True
             order.save()
 
             return Response({
@@ -302,39 +301,13 @@ class CheckoutAPIView(APIView):
                 "order_username": request.user.username,
                 "total_price": order.get_cart_total,
                 'payment_method':order.payment_method,
-                'payment_status':order.payment_status,
+                
                 "shipping_address": ShippingAddressSerializer(shipping).data
 
             }, status=status.HTTP_201_CREATED)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
-
-#Payment API
-
-class PaymentOrderAPI(APIView):
-    permission_classes=[IsAuthenticated]
-
-    def post(self,request,pk):
-        try:
-            order=Order.objects.get(id=pk,is_checked_out=True)
-        except Order.DoesNotExist:
-            return Response({'error': 'Order not found'}, status=status.HTTP_404_NOT_FOUND)
-        
-        if order.payment_status:
-            order.status="delivered"
-            order.completed=True      
-
-        order.save()
-
-        return Response({
-            "message": f" Order Delivered and Completed successfully",
-            "order_id": order.id,
-            "total_price": order.get_cart_total,
-            "completed": order.completed
-        }, status=status.HTTP_200_OK)
-
-
 
 
 #User
@@ -362,7 +335,7 @@ class OrderDetailUpdateDeleteView(APIView):
    
 
 
-#Payment Integration
+
 
 
 #Admin Functionality
@@ -380,39 +353,62 @@ class AdminOrderListAPIView(APIView):
     
 
 class AdminOrderUpdateView(APIView):
-    permission_classes=[IsAdmin]
+    permission_classes = [IsAdmin]
 
-    def patch(self,request,pk):
+    def patch(self, request, pk):
         try:
-          order=Order.objects.get(is_checked_out=True,pk=pk)
+            order = Order.objects.get(is_checked_out=True, pk=pk)
         except Order.DoesNotExist:
-            return Response({'error':'Order not found'},status=status.HTTP_404_NOT_FOUND)
-        
-        status_value=request.data.get('status')
+            return Response({'error': 'Order not found'}, status=status.HTTP_404_NOT_FOUND)
 
-        if status_value not in dict(Order.STATUS_CHOICES):
-            return Response({'error':'Invalid status'},status=status.HTTP_400_BAD_REQUEST)
+        status_value = request.data.get('status')
+        payment_status = request.data.get('payment_status')
 
-        order.status=status_value
+        # Validate order status
+        if status_value and status_value not in dict(Order.STATUS_CHOICES):
+            return Response({'error': 'Invalid status'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Validate payment status
+        if payment_status and payment_status not in dict(Order.PAYMENT_STATUS):
+            return Response({'error': 'Invalid payment status'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Update order
+        if status_value:
+            order.status = status_value
+        if payment_status:
+            order.payment_status = payment_status
+
+        # Mark as completed if delivered & paid
+        if order.status == 'delivered' and order.payment_status == 'success':
+            order.completed = True
+
         order.save()
 
         serializer = AdminOrderSerializer(order)
-
-        return Response({'message':'Order status updated Successfully',
-                         'order':serializer.data                         
-                         },status=status.HTTP_200_OK)
-    
-    def delete(self,request,pk):
-
-        if request.user.role=='admin':
-           order=self.get_order(pk)
-           order.delete()
-           return Response({
-               'message':'Order Deleted Successfully'
-           },status=status.HTTP_200_OK)
         return Response({
-            'error':'You have no permission'
-        },status=status.HTTP_403_FORBIDDEN)
+            'message': 'Order status updated successfully',
+            'order': serializer.data
+        }, status=status.HTTP_200_OK)
+
+    def delete(self, request, pk):
+        try:
+            order = Order.objects.get(pk=pk, is_checked_out=True)
+        except Order.DoesNotExist:
+            return Response({'error': 'Order not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        if request.user.role == 'admin':
+            order.delete()
+            return Response({'message': 'Order deleted successfully'}, status=status.HTTP_200_OK)
+
+        return Response({'error': 'You have no permission'}, status=status.HTTP_403_FORBIDDEN)
+    
+
+#Payment API
+
+
+
+
+
     
 
 

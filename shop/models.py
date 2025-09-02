@@ -53,6 +53,11 @@ class Order(models.Model):
         ('ONLINE','Online Payment')
     ]
 
+    PAYMENT_STATUS=[
+        ('success','Success'),
+        ('in_progress','In Progress')
+    ]
+
     customer = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
     created_at = models.DateTimeField(auto_now_add=True)
     is_checked_out=models.BooleanField(default=False)
@@ -61,7 +66,7 @@ class Order(models.Model):
 
     #payment info
     payment_method=models.CharField(max_length=20,choices=PAYMENT_METHODS,default="COD")
-    payment_status=models.BooleanField(default=False)
+    payment_status=models.CharField(max_length=20,choices=PAYMENT_STATUS,default='in_progress')
     transaction_id=models.CharField(max_length=100,null=True,blank=True)
     
     @property

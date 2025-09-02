@@ -169,7 +169,7 @@ class AdminOrderSerializer(serializers.ModelSerializer):
         
     class Meta:
         model=Order
-        fields=['id','customer','customer_name','created_at','status','is_checked_out','completed','items','shipping_address','total_price','total_items']
+        fields=['id','customer','customer_name','created_at','status','is_checked_out','payment_method','payment_status','completed','items','shipping_address','total_price','total_items']
         read_only_fields=['customer','created_at']
 
         
