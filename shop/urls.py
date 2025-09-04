@@ -27,7 +27,7 @@ urlpatterns = [
 
     #admin users
     path('admin/orders/',AdminOrderListAPIView.as_view()),
-    path('admin/orders/<int:pk>/update/',AdminOrderUpdateView.as_view()),  
+    path('admin/orders/<int:pk>/',AdminOrderUpdateView.as_view()),  
 
    
   

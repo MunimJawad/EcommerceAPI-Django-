@@ -323,14 +323,24 @@ class OrderListAPIView(APIView):
 class OrderDetailUpdateDeleteView(APIView):
     permission_classes=[IsAuthenticated]
 
-    def get_order(self, pk):
-        # Ensure that the order is retrieved using the pk
-        return get_object_or_404(Order, pk=pk)
-
     def get(self, request, pk):
-        order = self.get_order(pk)
+        order = Order.objects.get(pk=pk,customer=request.user)
         serializer = OrderSerializer(order)  # Make sure to pass the context as well
         return Response(serializer.data)
+    
+    def patch(seld,request,pk):
+        try:
+            order = Order.objects.get(pk=pk, customer=request.user, is_checked_out=True)
+        except Order.DoesNotExist:
+            return Response({'error': 'Order not found'}, status=status.HTTP_404_NOT_FOUND)
+        
+        if order.status in ["pending","processing"]:
+            order.status="cancelled"
+            order.save()
+            return Response({'message': 'Order cancelled successfully'}, status=status.HTTP_200_OK)
+        else:
+            return Response({'error': 'Order cannot be cancelled once shipped/delivered'}, status=status.HTTP_400_BAD_REQUEST)
+
     
    
 
@@ -345,15 +355,24 @@ class AdminOrderListAPIView(APIView):
 
     def get(self, request):
         orders=Order.objects.all().order_by('-created_at')
+        total_order=orders.count()
         #orders = Order.objects.filter(is_checked_out=True ).order_by('-created_at')
         serializer = AdminOrderSerializer(orders, many=True)
-        return Response(serializer.data)
+        return Response({
+         'total_orders':total_order,
+         'orders': serializer.data
+        })
     
     
     
 
 class AdminOrderUpdateView(APIView):
     permission_classes = [IsAdmin]
+
+    def get(self,request,pk):
+        order=Order.objects.get(pk=pk)
+        serializer=AdminOrderSerializer(order)
+        return Response(serializer.data)
 
     def patch(self, request, pk):
         try:
@@ -381,6 +400,8 @@ class AdminOrderUpdateView(APIView):
         # Mark as completed if delivered & paid
         if order.status == 'delivered' and order.payment_status == 'success':
             order.completed = True
+        else:
+            order.completed=False
 
         order.save()
 

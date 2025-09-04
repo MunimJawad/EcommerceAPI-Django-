@@ -1,0 +1,80 @@
+Next Features To Add
+1. Product Reviews & Ratings (Customer Side)
+
+Customers should be able to leave a review & rating after order is delivered.
+
+Helps future customers decide what to buy.
+👉 You’ll need:
+
+Review model (linked to Product & User)
+
+API to create, list, update, delete reviews.
+
+Average rating field in Product.
+
+2. Search & Filters
+
+Already you have categories → now add search by product name, description, tags.
+
+Filters:
+
+Price range
+
+Category
+
+Rating
+
+Availability (in stock / out of stock)
+
+3. Wishlist / Favorites
+
+Customers can add products to a wishlist to buy later.
+
+API:
+
+Add to wishlist
+
+Remove from wishlist
+
+Get wishlist
+
+4. Inventory Management (Admin Side)
+
+Reduce product stock after order is placed.
+
+Prevent checkout if stock is not available.
+
+Notify admin if stock is low.
+
+5. Analytics & Reports (Admin Dashboard)
+
+Daily/Monthly sales reports.
+
+Best-selling products.
+
+Total revenue, pending orders, cancelled orders.
+
+6. Notifications
+
+Email notifications for:
+
+Order placed
+
+Order shipped
+
+Order delivered
+
+(Later you can add SMS/Push if needed)
+
+7. Security & Optimization
+
+Add throttling & rate limiting (DRF settings).
+
+Add pagination for large product/order lists.
+
+Use caching for products (Redis / DRF cache).
+
+👉 From experience, the most natural next step right now would be to add:
+✅ Product Reviews & Ratings (customer feature)
+or
+✅ Inventory Management (admin feature
