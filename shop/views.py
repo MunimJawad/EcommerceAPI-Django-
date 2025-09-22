@@ -28,21 +28,23 @@ class LoginView(APIView):
         return Response(serializer.errors, status=status.HTTP_401_UNAUTHORIZED)
     
 class UserListView(APIView):
-    permission_classes = [IsAdmin]
+    permission_classes=[IsAuthenticated]
 
     def get(self, request):  
-        if request.user.role !="admin":
-            return Response({"error":"You have no permission to view this page"})
+       # if request.user.role !="admin":
+       #     return Response({"error":"You have no permission to view this page"})
         users = CustomUser.objects.all()
         total_users = users.count()
         serializer = UserSerializer(users, many=True)
+        auth_user = UserSerializer(request.user).data
         return Response({
             'users': serializer.data,
-            'total_users': total_users
+            'total_users': total_users,
+            'authUser':auth_user
         })
 
 class UserDetailUpdateDeleteView(APIView):
-    permission_classes=[IsAdminOrSelf]
+    permission_classes=[IsAuthenticated]
 
     def get(self,request,pk):
         user=get_object_or_404(CustomUser,pk=pk)
@@ -72,7 +74,7 @@ class UserDetailUpdateDeleteView(APIView):
 #Categroy Crud
 
 class CategoryCreateOrListView(APIView):
-    permission_classes=[IsAdminOrReadOnly]
+    permission_classes=[IsAuthenticated]
 
     def get(self, request):
       categories = Category.objects.all()
@@ -94,7 +96,7 @@ class CategoryCreateOrListView(APIView):
 
 
 class CategoryUpdateOrDeleteView(APIView):
-    permission_classes=[IsAdminOrReadOnly]
+    permission_classes=[IsAuthenticated]
     def get_object(self, pk):
         category = get_object_or_404(Category, pk=pk)
         # Check object-level permissions

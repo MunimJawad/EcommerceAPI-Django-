@@ -59,7 +59,7 @@ class UserSerializer(serializers.ModelSerializer):
                                    validators=[UniqueValidator(queryset=User.objects.all())])
 
     
-
+    
     class Meta:
         model=User
         fields=['id','username','email','password','role']
@@ -113,10 +113,11 @@ class ProductSerializer(serializers.ModelSerializer):
 class OrderItemSerializer(serializers.ModelSerializer):
     product_title = serializers.ReadOnlyField(source='product.title')
     product_price = serializers.ReadOnlyField(source='product.price')
+    item_total_price=serializers.ReadOnlyField(source='get_total')
 
     class Meta:
         model = OrderItem
-        fields = ['id', 'product', 'product_title', 'product_price', 'quantity']
+        fields = ['id', 'product', 'product_title', 'product_price', 'quantity','item_total_price']
 
 
 class ShippingAddressSerializer(serializers.ModelSerializer):
